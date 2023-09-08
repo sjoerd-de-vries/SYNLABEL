@@ -1,0 +1,5 @@
+# Requirements for installing the SYNLABEL package as editable
+# Followed by the packages needed for running the experiments
+
+-e .
+matplotlib==3.7.2
