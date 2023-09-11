@@ -6,7 +6,7 @@ As presented in the paper: Generating the Ground Truth: Synthetic Data for Label
 
 ## Installation
 
-The virtual environment that was used to run this framework succesfully is specified in requirements.txt
+The virtual environment that was used to run this framework successfully is specified in requirements.txt
 
 The code was tested using Python version 3.9
 
