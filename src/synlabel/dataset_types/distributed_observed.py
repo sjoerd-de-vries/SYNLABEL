@@ -86,14 +86,16 @@ class DistributedObservedDataset(DistributedDataset, ObservedDataset, ExpertData
             transformation = kwargs.get("function", None)
             decision_function = kwargs.get("decision_function", None)
             X, X_complement, y, func = super()._transform_to_ground_truth(
-                transformation, decision_function
+                transformation, decision_function, self.classes
             )
         elif specific_method == "identity":
             X, X_complement, y, func = super()._identity_transform("discrete")
         else:
             raise Exception(f"Specific method: {specific_method} not available")
 
-        transformed_dataset = G_dataset.GroundTruthDataset(X=X, y=y, func=func)
+        transformed_dataset = G_dataset.GroundTruthDataset(
+            X=X, y=y, func=func, classes=self.classes
+        )
 
         return transformed_dataset
 
@@ -128,7 +130,7 @@ class DistributedObservedDataset(DistributedDataset, ObservedDataset, ExpertData
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = PG_dataset.PartialGroundTruthDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
@@ -165,7 +167,7 @@ class DistributedObservedDataset(DistributedDataset, ObservedDataset, ExpertData
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = D_dataset.DiscreteObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset

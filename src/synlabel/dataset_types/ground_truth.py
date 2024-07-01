@@ -62,14 +62,22 @@ class GroundTruthDataset(DiscreteDataset):
             # Generate predictions
             y_extended = self.func.predict(X_extended)
 
-            new_y_shape = (self.y.shape[0], len(np.unique(self.y)))
+            old_classes = self.classes
+            class_index_dict = {}
+            for i in range(len(old_classes)):
+                class_index_dict[old_classes[i]] = i
+
+            y_shape = self.y.shape[0]
+
+            new_y_shape = (y_shape, len(old_classes))
             y_PG = np.zeros(new_y_shape)
 
             for i in range(y_extended.shape[0]):
-                modulated_index = i % self.y.shape[0]
+                modulated_index = i % y_shape
                 new_label = y_extended[i]
-                y_PG[modulated_index, new_label] += 1 / samples_per_instance
-
+                y_PG[modulated_index, class_index_dict[new_label]] += (
+                    1 / samples_per_instance
+                )
             func_PG = self.func
         else:
             raise Exception("Incorrect list of features to hide provided")
@@ -109,6 +117,7 @@ class GroundTruthDataset(DiscreteDataset):
         PartialGroundTruthDataset
             a newly constructed Partial Ground Truth dataset
         """
+
         # Call specific transformation
         if specific_method == "feature_hiding":
             features_to_hide = kwargs["features_to_hide"]
@@ -129,7 +138,7 @@ class GroundTruthDataset(DiscreteDataset):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = PG_dataset.PartialGroundTruthDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
@@ -158,7 +167,7 @@ class GroundTruthDataset(DiscreteDataset):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = LD_dataset.DistributedObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
@@ -187,7 +196,7 @@ class GroundTruthDataset(DiscreteDataset):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = D_dataset.DiscreteObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
