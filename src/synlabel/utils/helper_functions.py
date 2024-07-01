@@ -8,22 +8,42 @@ from numpy import linalg as LA
 rng = np.random.default_rng()
 
 
-def one_hot_encoding(y):
+def numpy_probability_check(values):
+    p_sum = values.sum(axis=1)
+
+    atol = np.sqrt(np.finfo(np.float64).eps)
+    faulty = abs(p_sum - 1.0) > atol
+
+    if any(faulty):
+        prob_error = values[faulty]
+        p_sum_error = p_sum[faulty]
+        print("faulty probabilities: ", prob_error)
+        print("sum of probabilities: ", p_sum_error)
+        raise ValueError("probabilities do not sum to 1")
+
+
+def one_hot_encoding(y, classes=None):
     """transforms hard labels into a label distribution
 
     Parameters
     ----------
     y : array-like
         hard labels
+    classes : []
+        the classes in the dataset
 
     Returns
     -------
     one_hot
         label distribution
     """
+    if classes is None:
+        classes = np.unique(y)
 
-    one_hot = np.zeros((y.size, y.max() + 1))
-    one_hot[np.arange(y.size), y] = 1
+    class_list = list(classes)
+    one_hot = np.zeros((y.size, len(class_list)))
+    label_indices = [class_list.index(label) for label in y]
+    one_hot[np.arange(y.size), label_indices] = 1
 
     return one_hot
 
@@ -183,16 +203,18 @@ def generate_random_transition_matrix(n_classes, flip_prob):
     diagonal_value = 1 - flip_prob
     np.fill_diagonal(row_normalized, diagonal_value)
 
-    return row_normalized
+    col_normalized = row_normalized.T
+
+    return col_normalized
 
 
-def apply_transition_matrix(matrix, dist):
+def apply_transition_matrix(dist, matrix):
     """Applies a transition matrix to a label distribution
 
     Parameters
     ----------
     matrix : array-like
-        the transition matrix to applu
+        the transition matrix to apply
     dist : array-like
         the distribution to modify
 
@@ -201,6 +223,18 @@ def apply_transition_matrix(matrix, dist):
     new_dist : array-like
         the modified label distribution
     """
+    # ensure the matrix is normalized
+    if not all(
+        np.isclose(
+            matrix.sum(axis=0),
+            np.ones(matrix.shape[0]),
+            rtol=1e-05,
+            atol=1e-08,
+            equal_nan=False,
+        )
+    ):
+        raise ValueError("The transition matrix should sum to zero along the 0th axis")
+
     new_dist = np.zeros_like(dist)
 
     for i in range(dist.shape[0]):

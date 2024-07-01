@@ -33,16 +33,18 @@ class PartialGroundTruthDataset(DistributedDataset):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _deterministic_decision(self, decision_function):
+    def _deterministic_decision(self, decision_function, classes):
         if decision_function is None:
             print("No decision function defined, numpy argmax is used.")
             decision_function = lambda x: np.argmax(x)
 
         func = decision_function_generator(self.func, decision_function)
         try:
-            y = func.predict(self.X)
+            y_indices = func.predict(self.X)
         except Exception:
             raise Exception("transformation could not be applied")
+
+        y = np.array(classes)[y_indices]
 
         X, X_complement = self.X, self.X_complement
         return X, X_complement, y, func
@@ -105,13 +107,17 @@ class PartialGroundTruthDataset(DistributedDataset):
         # Call specific transformation
         if specific_method == "determinstic_decision":
             decision_function = kwargs.get("decision_function", None)
-            X, X_complement, y, func = self._deterministic_decision(decision_function)
+            X, X_complement, y, func = self._deterministic_decision(
+                decision_function, self.classes
+            )
         elif specific_method == "identity":
             X, X_complement, y, func = super()._identity_transform("discrete")
         else:
             raise Exception(f"Specific method: {specific_method} not available")
 
-        transformed_dataset = G_dataset.GroundTruthDataset(X=X, y=y, func=func)
+        transformed_dataset = G_dataset.GroundTruthDataset(
+            X=X, y=y, func=func, classes=self.classes
+        )
 
         return transformed_dataset
 
@@ -155,7 +161,7 @@ class PartialGroundTruthDataset(DistributedDataset):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = LD_dataset.DistributedObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
@@ -184,7 +190,7 @@ class PartialGroundTruthDataset(DistributedDataset):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = D_dataset.DiscreteObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset

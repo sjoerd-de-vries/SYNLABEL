@@ -2,7 +2,7 @@
 
 This repository contains the code for the SYNLABEL package.
 
-As presented in the paper: Generating the Ground Truth: Synthetic Data for Label Noise Research
+As presented in the paper: Generating the Ground Truth: Synthetic Data for Soft Label and Label Noise Research
 
 ## Installation
 
@@ -53,6 +53,10 @@ Contains the figures that are produces by the files in */analysis.
 
 Contains the results of the experiments in */demonstrations in .json format.
 
+***/uncertainty**
+
+Contains a notebook and .py file that are used for the Uncertainty by Feature Hiding experiment.
+
 ### **/src/synlabel**
 
 The framework. 
@@ -71,11 +75,13 @@ Contains helper methods.
 
 ## How to use
 
-The files in "/experiments/demonstrations" are used to conduct the experiments for which the results are shown in Section 5 and 6 of the paper. 
+The files in "/experiments/demonstrations" are used to conduct the experiments for which the results are shown in Section 5 and 7 of the paper. 
 
 The file ground_truth_generation.py shows how a simulated dataset can be generated and set as the Ground Truth, and how a learned function can be used to generate a Ground Truth dataset.
 
 The files exp_feature_hiding.py and exp_injection_methods were used to generate the results for the paper, and illuatrate how a PG set can be constructed from a G set via feature_hiding.
+
+The files in "/experiments/uncertainty" are used to conduct the experiments for which the results are shown in Section 6 of the paper.
 
 When these files are executed, new result folders are created based on the current time. In order to analyse these, the paths in the files in */analysis will need to be adjusted.
 

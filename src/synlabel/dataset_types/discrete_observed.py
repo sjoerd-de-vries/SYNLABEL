@@ -68,7 +68,9 @@ class DiscreteObservedDataset(DiscreteDataset, ObservedDataset, ExpertData):
         else:
             raise Exception(f"Specific method: {specific_method} not available")
 
-        transformed_dataset = G_dataset.GroundTruthDataset(X=X, y=y, func=func)
+        transformed_dataset = G_dataset.GroundTruthDataset(
+            X=X, y=y, func=func, classes=self.classes
+        )
 
         return transformed_dataset
 
@@ -103,7 +105,7 @@ class DiscreteObservedDataset(DiscreteDataset, ObservedDataset, ExpertData):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = PG_dataset.PartialGroundTruthDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset
@@ -132,7 +134,7 @@ class DiscreteObservedDataset(DiscreteDataset, ObservedDataset, ExpertData):
             raise Exception(f"Specific method: {specific_method} not available")
 
         transformed_dataset = LD_dataset.DistributedObservedDataset(
-            X=X, X_complement=X_complement, y=y, func=func
+            X=X, X_complement=X_complement, y=y, func=func, classes=self.classes
         )
 
         return transformed_dataset

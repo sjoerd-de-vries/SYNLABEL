@@ -14,7 +14,7 @@ sampling_methods = [
     "multivariate_kde_sklearn",
     "multivariate_imputation_without_y",
     "multivariate_imputation_with_y",
-]
+]  
 
 
 class Sampler:
@@ -68,7 +68,7 @@ class Sampler:
                 self.X_complement, samples_per_instance, self.var_types
             )
         elif self.sampling_method == "independent_conditional":
-            # implement later
+            # Not yet implemented
             pass
         elif self.sampling_method == "multivariate_kde_scipy":
             return joint_distribution_sampling(
@@ -99,6 +99,7 @@ class Sampler:
                 )
         else:
             raise (Exception("Selected sample method does not exist"))
+
 
 def check_var_types(data, var_types):
     allowed_var_types = ["c", "u", "o"]
@@ -264,7 +265,6 @@ def gibbs_sampler(x, y, p_x_given_y, p_y_given_x, num_samples):
 
 # 2C MICE
 def multivariate_imputation(X_complement, independent_data, samples_per_instance):
-
     train_data = np.hstack((X_complement, independent_data))
     missing_frame = np.full(X_complement.shape, np.nan)
     data_to_impute = np.hstack((missing_frame, independent_data))

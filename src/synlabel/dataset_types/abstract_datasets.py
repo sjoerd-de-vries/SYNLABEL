@@ -1,9 +1,14 @@
 # Framework for generating datasets with label noise
 
 import numpy as np
+from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_array
 
-from ..utils.helper_functions import decision_function_generator, one_hot_encoding
+from ..utils.helper_functions import (
+    decision_function_generator,
+    numpy_probability_check,
+    one_hot_encoding,
+)
 
 
 class Dataset:
@@ -21,6 +26,9 @@ class Dataset:
         The target variable. Either hard or soft labels.
     func : object
         An object (function) implementing the "predict" or "predict_proba" method.
+    classes : array-like of shape (n_classes, )
+        The classes of the target variable. If set for discrete datasets, it has to
+        match the unique values of the target variable.
     """
 
     def __init__(self, **kwargs):
@@ -28,10 +36,13 @@ class Dataset:
         self.X_complement = kwargs.get("X_complement", None)
         self.y = kwargs.get("y", None)
         self.func = kwargs.get("func", None)
+        # Can only be really set for distributed data. In the case of discrete data,
+        # it has to match the inferred values from the target variable.
+        self.classes = kwargs.get("classes", None)
 
     @property
     def X(self):
-        return self._X
+        return self._X.copy()
 
     @X.setter
     def X(self, value):
@@ -39,7 +50,10 @@ class Dataset:
 
     @property
     def X_complement(self):
-        return self._X_complement
+        if self._X_complement is None:
+            return None
+        else:
+            return self._X_complement.copy()
 
     @X_complement.setter
     def X_complement(self, value):
@@ -50,7 +64,7 @@ class Dataset:
 
     @property
     def y(self):
-        return self._y
+        return self._y.copy()
 
     @y.setter
     def y(self, value):
@@ -72,6 +86,15 @@ class Dataset:
         else:
             self._func = func
 
+    @property
+    def classes(self):
+        return self._classes.copy()
+
+    @classes.setter
+    def classes(self, value):
+        self._classes = self._check_classes(value)
+        self._validate_class_compatability()
+
     def _check_y(self, value):
         if value.shape[0] != self.X.shape[0]:
             raise ValueError("X and y are different shapes")
@@ -82,6 +105,16 @@ class Dataset:
         else:
             X = self.X
         return X, self.y
+
+    def _check_classes(self, value):
+        pass
+
+    def _validate_class_compatability(self):
+        if hasattr(self.func, "classes_"):
+            if any(self.func.classes_ != self._classes):
+                raise ValueError(
+                    "The classes in the dataset do not match the classes of the function."
+                )
 
     def _identity_transform(self, target):
         """Transforms different dataset types into eachother, without changing their
@@ -102,7 +135,7 @@ class Dataset:
         """
         if target == "distributed":
             if self.y.ndim < 2:
-                new_y = one_hot_encoding(self.y)
+                new_y = one_hot_encoding(self.y, self._classes)
             else:
                 new_y = self.y
         elif target == "discrete":
@@ -134,6 +167,17 @@ class DistributedDataset(Dataset):
                 "y has one ore fewer dimensions, which is not allowed for"
                 "a DistributedDataset"
             )
+        numpy_probability_check(value)
+
+    def _check_classes(self, value):
+
+        if value is None:
+            classes = np.arange(self.y.shape[1])
+        elif self.y.shape[1] != len(value):
+            raise ValueError("Classes have to match the shape of the target variable.")
+        else:
+            classes = value
+        return classes
 
 
 class DiscreteDataset(Dataset):
@@ -158,11 +202,22 @@ class DiscreteDataset(Dataset):
                 "a DicreteDataset"
             )
 
-        # Class names should be integers starting from 0
-        unique_labels = np.unique(value)
-        for label in range(len(unique_labels)):
-            if label not in unique_labels:
-                raise Exception("labels have to be integers starting from 0. Rescale.")
+        # Ensure that target y is of a non-regression type
+        check_classification_targets(value)
+
+    def _check_classes(self, value):
+
+        classes_in_data = np.unique(self.y)
+        if value is not None:
+            if len(classes_in_data) != len(value):
+                print("Warning: not all known classes are present in the data")
+            elif any(classes_in_data != value):
+                raise ValueError(
+                    "The classes in the data do not match the given classes."
+                )
+        else:
+            value = classes_in_data
+        return value
 
 
 class ObservedDataset(Dataset):
@@ -190,7 +245,9 @@ class ObservedDataset(Dataset):
             raise Exception("Function does not have predict(_proba) method")
         return self.X, self.X_complement, y, function
 
-    def _transform_to_ground_truth(self, function=None, decision_function=None):
+    def _transform_to_ground_truth(
+        self, function=None, decision_function=None, classes=None
+    ):
         if function is None:
             print("No function defined, self.func is used.")
             function = self.func
@@ -202,7 +259,8 @@ class ObservedDataset(Dataset):
                 print("No decision function defined, numpy argmax is used.")
                 decision_function = lambda x: np.argmax(x)
             function = decision_function_generator(function, decision_function)
-            y = function.predict(self.X)
+            y_indices = function.predict(self.X)
+            y = np.array(classes)[y_indices]
         else:
             raise Exception("Function does not have predict(_proba) method")
 
