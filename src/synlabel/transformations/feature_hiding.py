@@ -14,7 +14,7 @@ sampling_methods = [
     "multivariate_kde_sklearn",
     "multivariate_imputation_without_y",
     "multivariate_imputation_with_y",
-]  # independent_conditional
+]  
 
 
 class Sampler:
@@ -222,18 +222,6 @@ def marginal_KDE_sampling(
     return sampled_data
 
 
-# 1 C - Independent conditional dist
-# To be implemented
-# Possibly using
-# https://www.statsmodels.org/dev/generated/statsmodels.nonparametric.kernel_density.KDEMultivariateConditional.html#statsmodels.nonparametric.kernel_density.KDEMultivariateConditional
-# Alternative - https://github.com/freelunchtheorem/Conditional_Density_Estimation
-# Or single clf
-# Grid sample X'
-# Train CKDE on X', X
-# input grid into CKDE.pdf(X') to het p(X'|X)
-# multiply p(X' | X) with p(y | X' and X) aka fG to get probs. maybe normalize
-
-
 # 2 A - Non-Conditional
 def joint_distribution_sampling(
     X_complement, samples_per_instance, var_types, method="scipy"
@@ -257,25 +245,7 @@ def joint_distribution_sampling(
     return samples
 
 
-# 2 B - conditional
 
-# https://www.statsmodels.org/dev/generated/statsmodels.nonparametric.kernel_density.KDEMultivariateConditional.html#statsmodels.nonparametric.kernel_density.KDEMultivariateConditional
-# Alternative - https://github.com/freelunchtheorem/Conditional_Density_Estimation
-# Can maybe sample with:
-# https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.html
-
-# Grid sample X'
-# Train CKDE on X', X
-# input grid into CKDE.pdf(X') to het p(X'|X)
-# multiply p(X' | X) with p(y | X' and X) aka fG to get probs. maybe normalize
-
-# Gibbs sampler or similar might be better:
-# https://towardsdatascience.com/gibbs-sampling-8e4844560ae5
-# To use Gibbs we need to be able to sample from p(X'|X) and p(X'|X).
-# This is actually what we need to accomplish overall...
-
-
-# for indep, just feed single columns x? Not sure if we need P(X, Y) read.
 def gibbs_sampler(x, y, p_x_given_y, p_y_given_x, num_samples):
     # Initialize the Markov chain with random values for x and y
     x_samples = np.zeros(num_samples)
@@ -295,7 +265,6 @@ def gibbs_sampler(x, y, p_x_given_y, p_y_given_x, num_samples):
 
 # 2C MICE
 def multivariate_imputation(X_complement, independent_data, samples_per_instance):
-    # To do: allow for flexible estimator.
     train_data = np.hstack((X_complement, independent_data))
     missing_frame = np.full(X_complement.shape, np.nan)
     data_to_impute = np.hstack((missing_frame, independent_data))
